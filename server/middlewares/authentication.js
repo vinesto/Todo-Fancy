@@ -9,7 +9,6 @@ const authentication = (req, res, next) => {
     let token = req.headers.token
     if (token) {
         let decode = jwt.verify(token, process.env.JWT_KEY)
-        // console.log(decode);
         User.findOne({ _id: decode.id })
             .then((data) => {
                 if (data) {

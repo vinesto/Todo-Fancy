@@ -26,7 +26,7 @@ const register = function (req, res) {
                             }
                         )
                     }
-                )
+                    )
                     .catch(function (err) {
                         res.status(500).json(
                             {
@@ -34,7 +34,7 @@ const register = function (req, res) {
                             }
                         )
                     }
-                )
+                    )
             } else {
                 res.status(400).json(
                     {
@@ -72,7 +72,7 @@ const login = function (req, res) {
                 }
             }
         }
-    )
+        )
         .catch(function (err) {
             res.status(500).json(
                 {
@@ -81,9 +81,56 @@ const login = function (req, res) {
                 }
             )
         }
-    )
+        )
+}
+
+const loginFb = function (req, res) {
+    let authResponse = req.body
+    let url_user_info = `https://graph.facebook.com/me?fields=id,name,email&access_token=${authResponse.accessToken}`
+    axios({
+        method: "GET",
+        url: url_user_info
+    })
+        .then(function ({ data }) {
+            User.findOne({
+                email: data.email
+            })
+                .then(function (user) {
+                    if (user === null) {
+                        User.create({
+                            name: data.name,
+                            email: data.email,
+                            facebookId: data.id
+                        })
+                            .then(function (newUser) {
+                                let token = jwt.sign({ id: newUser._id, name: newUser.name, email: newUser.email }, process.env.JWT_KEY)
+                                res.status(200).json({ token, newUser })
+                            })
+                            .catch(function (err) {
+                                res.status(400).json({
+                                    message: "eror create user",
+                                    error: err.message
+                                })
+                            })
+                    } else {
+                        let token = jwt.sign({ name: user.name, email: user.email }, process.env.JWT_KEY)
+                        res.status(200).json({ token })
+                    }
+                })
+                .catch(function (err) {
+                    res.status(400).json({
+                        message: "user not found",
+                        error: err.message
+                    })
+                })
+        })
+        .catch(function (err) {
+            res.status(500).json({
+                message: "error login fb",
+                error: err.message
+            })
+        })
 }
 
 
-
-module.exports = { register, login }
+module.exports = { register, login, loginFb }
