@@ -98,5 +98,23 @@ const updateTask = function (req, res) {
         })
 }
 
-module.exports = { createTask, deleteTask, getAllTask, updateTask }
+const getOneTask = function(req,res){
+    Task.findOne({
+        _id:req.params.id
+    })
+    .then(function(task){
+        res.status(200).json({
+            message:"task found",
+            data:task
+        })
+    })
+    .catch(function(err){
+        res.status(400).json({
+            message:"task not found",
+            error:err.message
+        })
+    })
+}
+
+module.exports = { createTask, deleteTask, getAllTask, updateTask, getOneTask }
 
