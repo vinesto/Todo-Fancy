@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+        crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
+        crossorigin="anonymous"></script>
+    <title>Document</title>
+    <style>
+        .navbar {
+            margin-bottom: 2%;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-dark">
+        <a class="navbar-brand text-white" href="#">Todo-Fancy</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link text-white" href="#">Welcome<span class="sr-only">(current)</span></a>
+                </li>
+            </ul>
+            <div class="navbar-right">
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- content -->
+    <div class="container">
+        <div class="row">
+
+            <div class="col-md-4">
+                <div class="card mb-4 text-white bg-dark">
+                    <h1 class="title text-center"> Add Task</h1>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Title:</label>
+                            <input type="text" class="form-control" id="inputTitle" placeholder="Enter title">
+                        </div>
+                        <div class="form-group">
+                            <label>Description:</label>
+                            <input type="text" class="form-control" id="inputDescription" placeholder="Enter description">
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="addTask()">Submit</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card mb-4 text-white bg-dark">
+                    <h1 class="title text-center"> Task List</h1>
+                    <div class="card-body tablecontent">
+
+                        <!-- table -->
+                        <table class="table head">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th scope="col">No</th>
+                                    <th scope="col">Title</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col">Action</th>
+                                </tr>
+                            </thead>
+                        </table>
+
+                        <!-- table -->
+
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+    </div>
+    <!-- content -->
+
+
+    <!-- Footer -->
+    <footer class="page-footer font-small bg-dark">
+
+        <!-- Copyright -->
+        <div class="footer-copyright text-center py-3">© 2018 Copyright:
+            <a href="https://mdbootstrap.com/bootstrap-tutorial/"> vinesto</a>
+        </div>
+        <!-- Copyright -->
+
+    </footer>
+    <!-- Footer -->
+    <script>
+        getTask()
+        let temp = []
+        let token = localStorage.getItem("token")
+        if (!token) {
+            window.location.replace("http://localhost:8080/index.html")
+        }
+
+        function logout() {
+            localStorage.clear()
+            window.location.replace("http://localhost:8080/index.html")
+        }
+
+        function addTask() {
+            $.ajax({
+                method: "POST",
+                url: "http://localhost:3000/tasks",
+                headers: {
+                    token: localStorage.getItem("token")
+                },
+                data:
+                {
+                    title: $("#inputTitle").val(),
+                    description: $("#inputDescription").val()
+                }
+            })
+                .done(function (result) {
+                    // $(".contentTable").remove()
+                    getTask()
+                })
+                .fail(function (err) {
+                    console.log(err);
+                })
+        }
+
+        function getTask() {
+            $.ajax({
+                method: "GET",
+                url: "http://localhost:3000/tasks",
+                headers: {
+                    token: localStorage.getItem("token")
+                }
+            })
+            .done(function ({ data }) {
+                console.log(data);
+                temp = data
+                $(".contentTable").hide()
+                data.forEach((element, index) => {
+                    let htmlTask = `
+                <table class="table contentTable">
+                        <tbody>
+                            <tr>
+                                <th scope="row">${index + 1}</th>
+                                <td>${element.title}</td>
+                                <td>${element.description}</td>
+                                <td>
+                                    <a href="#" temp-index="${index}" class="text-white" onclick=getUpdateForm('${element._id}')>Edit |</a>
+                                    <a href="#" class="text-white" onclick="deleteTask('${element._id}')"> Delete</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>`
+                    $(".tablecontent").append(htmlTask)
+                });
+            })
+            .fail(function (err) {
+                console.log(err.message);
+            })
+        }
+
+        function deleteTask(id) {
+            $.ajax({
+                method: "DELETE",
+                url: `http://localhost:3000/tasks/${id}`,
+                headers: {
+                    token: localStorage.getItem("token")
+                }
+            })
+                .done(function (result) {
+                    // $(".contentTable").hide()
+                    getTask()
+                    // console.log('delete success', result);
+                })
+                .fail(function (err) {
+                    console.log('delete failed', err);
+                })
+        }
+
+        function updateTask(id) {
+            $.ajax({
+                method: "PUT",
+                url: `http://localhost:3000/tasks/${id}`,
+                headers: {
+                    token: localStorage.getItem("token")
+                },
+                data: {
+                    title: $("#editTitle").val(),
+                    description: $("#editDescription").val()
+                }
+            })
+            .done(function ({ data }) {
+                // $(".contentTable").hide()
+                // $(".editForm").hide()
+                getTask()
+            })
+            .catch(function (err) {
+                console.log(err);
+            })
+        }
+
+        function getUpdateForm(id) {
+            $.ajax({
+                method: "GET",
+                url: `http://localhost:3000/tasks/${id}`,
+                headers: {
+                    token: localStorage.getItem("token")
+                },
+            })
+            .done(function ({ data }) {
+                $(".editForm").remove()
+                $(".row").append(`
+                <div class="col-md-4 editForm">
+                <div class="card mb-4 text-white bg-dark">
+                    <h1 class="title text-center" id="task-form"> Edit Task</h1>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Title:</label>
+                            <input type="text" class="form-control" id="editTitle" value="${data.title}">
+                        </div>
+                        <div class="form-group">
+                            <label>Description:</label>
+                            <input type="text" class="form-control" id="editDescription" value="${data.description}">
+                        </div>
+                        <button type="submit" class="btn btn-primary" onclick="updateTask('${data._id}')">Submit</button>
+                        <button type="submit" class="btn btn-primary" onclick="cancelEditForm()">Cancel</button>
+                    </div>
+                </div>
+            </div>`)
+
+            })
+            .fail(function (err) {
+                console.log(err);
+            })
+        }
+        function cancelEditForm(){
+            $(".editForm").hide()
+        }
+
+    </script>
+
+    <!-- <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>
